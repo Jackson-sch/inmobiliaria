@@ -7,6 +7,9 @@ import { HomeFeaturedSection } from "@/components/home/HomeFeaturedSection";
 import { HomeAboutSection } from "@/components/home/HomeAboutSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { HomeCtaSection } from "@/components/home/HomeCtaSection";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildRealEstateAgentSchema, buildPropertyListSchema } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/metadata";
 
 export default async function HomePage() {
   const [propertiesResult, districts, contact] = await Promise.all([
@@ -31,8 +34,16 @@ export default async function HomePage() {
     })),
   ]);
 
+  const siteUrl = getSiteUrl();
+  const agentSchema = buildRealEstateAgentSchema(contact, siteUrl);
+  const featuredSchema = propertiesResult.properties.length > 0
+    ? buildPropertyListSchema(propertiesResult.properties, siteUrl)
+    : null;
+
   return (
     <>
+      <JsonLd data={agentSchema} />
+      {featuredSchema && <JsonLd data={featuredSchema} />}
       <SiteHeader />
       <main>
         <HomeHeroSection

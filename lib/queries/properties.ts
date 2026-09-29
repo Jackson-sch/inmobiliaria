@@ -223,3 +223,24 @@ export async function getAvailableDistricts(): Promise<string[]> {
 
   return Array.from(new Set((data ?? []).map((row) => row.district))).sort();
 }
+
+/** Obtiene slugs y fechas de modificación para el sitemap dinámico. */
+export async function getPropertiesForSitemap(): Promise<Array<{ slug: string; updatedAt: string }>> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("properties")
+      .select("slug, updated_at")
+      .neq("status", "inactivo");
+
+    if (error || !data) return [];
+
+    return data.map((row) => ({
+      slug: row.slug,
+      updatedAt: row.updated_at || new Date().toISOString(),
+    }));
+  } catch {
+    return [];
+  }
+}
+

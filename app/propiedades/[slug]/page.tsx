@@ -10,8 +10,12 @@ import { PropertyPrintHeader, PropertyPrintFooter } from "@/components/detalle/P
 import { MortgageCalculator } from "@/components/detalle/MortgageCalculator";
 import { SharePropertyButton } from "@/components/detalle/SharePropertyButton";
 import { PrintPropertyButton } from "@/components/detalle/PrintPropertyButton";
+import Link from "next/link";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildPropertySchema, buildBreadcrumbSchema } from "@/lib/seo";
+import { getOptimizedOgImageUrl, getSiteUrl } from "@/lib/metadata";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -47,20 +51,31 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? property.description.slice(0, 155)
     : `${typeLabel} ${opLabel} en ${property.district}, ${property.city}. ${formattedPrice}. Asesoría Jean Mendocilla.`;
 
-  const imageUrl = cover?.secureUrl || "/hero-property.jpg";
+  const siteUrl = getSiteUrl();
+  const ogImageUrl = getOptimizedOgImageUrl(cover?.secureUrl || "/hero-property.jpg");
+  const canonicalUrl = `${siteUrl}/propiedades/${slug}`;
 
   return {
+    metadataBase: new URL(siteUrl),
     title,
     description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title,
       description,
-      type: "website",
+      url: canonicalUrl,
+      siteName: "Jean Mendocilla Asesoría Inmobiliaria",
+      locale: "es_PE",
+      type: "article",
       images: [
         {
-          url: imageUrl,
+          url: ogImageUrl,
+          secureUrl: ogImageUrl,
           width: 1200,
           height: 630,
+          type: "image/jpeg",
           alt: property.title,
         },
       ],
@@ -69,7 +84,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title,
       description,
-      images: [imageUrl],
+      images: [ogImageUrl],
     },
   };
 }
@@ -93,14 +108,40 @@ export default async function PropertyDetailPage({ params }: PageProps) {
       ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&z=15&output=embed`
       : `https://www.google.com/maps?q=${mapSearchQuery}&z=14&output=embed`;
 
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = `${siteUrl}/propiedades/${slug}`;
+  const propertySchema = buildPropertySchema(property, siteUrl);
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Inicio", url: siteUrl },
+    { name: "Propiedades", url: `${siteUrl}/propiedades` },
+    { name: property.title, url: canonicalUrl },
+  ]);
+
   const agentName = property.agent?.fullName || contact.fullName || "Jean Mendocilla";
   const agentPhone = property.agent?.whatsapp || contact.whatsapp || contact.phone;
   const avatarUrl = property.agent?.avatarUrl || contact.avatarUrl || contact.aboutPhotoUrl || "/jean-mendocilla-office.jpg";
 
   return (
     <>
+      <JsonLd data={propertySchema} />
+      <JsonLd data={breadcrumbSchema} />
       <SiteHeader />
       <div className="mx-auto max-w-6xl px-4 py-8">
+        {/* Migas de pan (Breadcrumb SEO y navegación UX) */}
+        <nav aria-label="Migas de pan" className="mb-4 flex items-center gap-1.5 text-xs text-neutral-500 print:hidden overflow-hidden whitespace-nowrap">
+          <Link href="/" className="hover:text-sage-deep transition-colors">
+            Inicio
+          </Link>
+          <span className="text-neutral-400">/</span>
+          <Link href="/propiedades" className="hover:text-sage-deep transition-colors">
+            Propiedades
+          </Link>
+          <span className="text-neutral-400">/</span>
+          <span className="text-neutral-800 font-medium truncate max-w-[200px] sm:max-w-md">
+            {property.title}
+          </span>
+        </nav>
+
         <PropertyPrintHeader
           agentName={agentName}
           agentPhone={agentPhone}

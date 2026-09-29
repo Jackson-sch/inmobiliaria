@@ -57,7 +57,7 @@ export function SharePropertyButton({
   const handleWhatsApp = () => {
     if (typeof window === "undefined") return;
     const url = window.location.href;
-    const text = `Hola, mira esta propiedad en ${district}: ${title} (${price}) -> ${url}`;
+    const text = `Hola, mira esta propiedad en ${district}: *${title}* (${price})\n\n${url}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
     setShowMenu(false);
   };

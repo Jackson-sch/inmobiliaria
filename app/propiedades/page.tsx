@@ -22,11 +22,46 @@ interface PageProps {
   }>;
 }
 
-export const metadata = {
-  title: "Propiedades en venta y alquiler | Trujillo",
-  description:
-    "Casas, departamentos y terrenos en venta y alquiler en Trujillo. Encuentra tu próxima propiedad.",
+import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildPropertyListSchema, buildBreadcrumbSchema } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/metadata";
+
+const TYPE_NAMES: Record<string, string> = {
+  casa: "Casas",
+  departamento: "Departamentos",
+  terreno: "Terrenos",
+  oficina: "Oficinas",
+  local_comercial: "Locales comerciales",
 };
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const siteUrl = getSiteUrl();
+
+  const typeName = params.type ? TYPE_NAMES[params.type] || params.type : "Propiedades";
+  const opName = params.operation === "venta" ? "en venta" : params.operation === "alquiler" ? "en alquiler" : "en venta y alquiler";
+  const locationName = params.district ? `en ${params.district}, Trujillo` : "en Trujillo";
+
+  const title = `${typeName} ${opName} ${locationName} | Jean Mendocilla`;
+  const description = `Explora ${typeName.toLowerCase()} ${opName} ${locationName}. Asesoría inmobiliaria personalizada y segura en La Libertad con Jean Mendocilla.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `${siteUrl}/propiedades`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${siteUrl}/propiedades`,
+      siteName: "Jean Mendocilla Asesoría Inmobiliaria",
+      locale: "es_PE",
+      type: "website",
+    },
+  };
+}
 
 export default async function PropiedadesPage({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -48,6 +83,13 @@ export default async function PropiedadesPage({ searchParams }: PageProps) {
     getAvailableDistricts().catch(() => []),
   ]);
 
+  const siteUrl = getSiteUrl();
+  const propertyListSchema = properties.length > 0 ? buildPropertyListSchema(properties, siteUrl) : null;
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Inicio", url: siteUrl },
+    { name: "Propiedades", url: `${siteUrl}/propiedades` },
+  ]);
+
   const buildPageHref = (targetPage: number) => {
     const urlParams = new URLSearchParams(
       Object.entries(params).filter(([, v]) => Boolean(v)) as [string, string][]
@@ -58,8 +100,19 @@ export default async function PropiedadesPage({ searchParams }: PageProps) {
 
   return (
     <>
+      <JsonLd data={breadcrumbSchema} />
+      {propertyListSchema && <JsonLd data={propertyListSchema} />}
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-8">
+        {/* Migas de pan (Breadcrumbs) */}
+        <nav aria-label="Migas de pan" className="mb-4 flex items-center gap-1.5 text-xs text-neutral-500">
+          <Link href="/" className="hover:text-sage-deep transition-colors">
+            Inicio
+          </Link>
+          <span className="text-neutral-400">/</span>
+          <span className="text-neutral-800 font-medium">Propiedades</span>
+        </nav>
+
         <h1 className="mb-1 text-2xl font-semibold text-neutral-900 font-display">
           Propiedades disponibles
         </h1>

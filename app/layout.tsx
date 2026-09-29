@@ -16,7 +16,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://jeanmendocilla.pe";
+import { getOptimizedOgImageUrl, getSiteUrl } from "@/lib/metadata";
+
+const siteUrl = getSiteUrl();
+const globalOgImage = getOptimizedOgImageUrl("/jean-mendocilla-banner.jpg");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -25,7 +28,44 @@ export const metadata: Metadata = {
     template: "%s | Jean Mendocilla",
   },
   description:
-    "Casas, departamentos y terrenos en venta en Trujillo. Asesoría inmobiliaria personalizada, de principio a fin.",
+    "Casas, departamentos y terrenos en venta y alquiler en Trujillo, El Golf, California y Víctor Larco. Asesoría inmobiliaria profesional de principio a fin.",
+  keywords: [
+    "inmobiliaria trujillo",
+    "casas en venta trujillo",
+    "departamentos en venta trujillo",
+    "departamentos en alquiler trujillo",
+    "terrenos en trujillo",
+    "bienes raices trujillo",
+    "victor larco herrera",
+    "el golf trujillo",
+    "california trujillo",
+    "huanchaco propiedades",
+    "asesor inmobiliario trujillo",
+    "jean mendocilla",
+    "inmobiliaria la libertad peru",
+  ],
+  authors: [{ name: "Jean Mendocilla", url: siteUrl }],
+  creator: "Jean Mendocilla",
+  publisher: "Jean Mendocilla Asesoría Inmobiliaria",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     type: "website",
     locale: "es_PE",
@@ -33,16 +73,18 @@ export const metadata: Metadata = {
     siteName: "Jean Mendocilla Asesoría Inmobiliaria",
     images: [
       {
-        url: "/jean-mendocilla-banner.jpg",
+        url: globalOgImage,
+        secureUrl: globalOgImage,
         width: 1200,
         height: 630,
+        type: "image/jpeg",
         alt: "Jean Mendocilla - Asesor Inmobiliario en Trujillo",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/jean-mendocilla-banner.jpg"],
+    images: [globalOgImage],
   },
   icons: {
     icon: [
