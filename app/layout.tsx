@@ -100,6 +100,7 @@ export const metadata: Metadata = {
 
 import { FloatingWhatsApp } from "@/components/layout/FloatingWhatsApp";
 import { getContactAndSocialSettings } from "@/actions/settings";
+import { Toaster } from "sonner";
 
 export default async function RootLayout({
   children,
@@ -111,6 +112,7 @@ export default async function RootLayout({
   return (
     <html lang="es" className={`${fraunces.variable} ${inter.variable}`}>
       <body className="font-body antialiased bg-linen text-ink min-h-screen">
+        <Toaster position="top-right" richColors closeButton />
         {children}
         <FloatingWhatsApp
           phone={contact?.whatsapp}

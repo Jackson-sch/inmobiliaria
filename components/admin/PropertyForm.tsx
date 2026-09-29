@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { createProperty, updateProperty, addPropertyImage } from "@/actions/properties";
+import { toast } from "sonner";
 import {
   propertyFormSchema,
   PropertyType,
@@ -61,6 +62,7 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<PropertyFormInput, any, PropertyFormValues>({
     resolver: zodResolver(propertyFormSchema),
@@ -108,6 +110,7 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
 
     if (!result.success) {
       setServerError(result.error);
+      toast.error(result.error || "Ocurrió un error al guardar la propiedad");
       return;
     }
 
@@ -132,21 +135,45 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
           });
         } catch (err: any) {
           console.error("Error al subir foto:", err);
-          alert(`La propiedad se creó, pero la foto ${item.file.name} no se pudo subir: ${err.message}`);
+          toast.warning(`La propiedad se guardó, pero la foto ${item.file.name} no se pudo subir: ${err.message}`);
         }
       }
       setUploadProgress(null);
     }
 
-    router.push(`/admin/propiedades/${result.data.slug}`);
+    toast.success(
+      isEditing
+        ? "¡Propiedad actualizada exitosamente!"
+        : "¡Propiedad guardada y publicada exitosamente!"
+    );
+
+    router.push("/admin");
     router.refresh();
   };
+
+  const selectedType = watch("type");
+  const isLand = selectedType === PropertyType.TERRENO;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-8">
       {serverError && (
         <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {serverError}
+        </div>
+      )}
+
+      {Object.keys(errors).length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50/90 p-4 text-sm text-red-800 shadow-2xs">
+          <p className="font-semibold flex items-center gap-2">
+            <span>⚠️ Hay campos con errores que debes revisar antes de guardar:</span>
+          </p>
+          <ul className="mt-2 list-disc list-inside space-y-1 text-xs text-red-700">
+            {Object.entries(errors).map(([field, err]) => (
+              <li key={field}>
+                <span className="font-medium capitalize">{field}</span>: {(err as any)?.message || "Valor inválido"}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -266,87 +293,166 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
             <input
               type="number"
               step="any"
+              placeholder="-8.1118"
               {...register("latitude", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.latitude)}
             />
+            {errors.latitude && (
+              <p className="mt-1 text-xs text-red-600">{errors.latitude.message}</p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm text-neutral-700">Longitud</label>
             <input
               type="number"
               step="any"
+              placeholder="-79.0287"
               {...register("longitude", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.longitude)}
             />
+            {errors.longitude && (
+              <p className="mt-1 text-xs text-red-600">{errors.longitude.message}</p>
+            )}
           </div>
         </div>
       </section>
 
       {/* Características */}
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-neutral-900">Características</h2>
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900">Características</h2>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            Dimensiones y especificaciones del inmueble.
+          </p>
+        </div>
+
+        {isLand && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-900 shadow-2xs">
+            <div className="flex items-center gap-1.5 font-semibold text-emerald-800">
+              <span className="text-sm">🌱</span>
+              <span>Leyenda informativa para Terrenos:</span>
+            </div>
+            <ul className="mt-1.5 space-y-1 text-emerald-900/90 list-disc list-inside">
+              <li>
+                <strong>Área de terreno (m²):</strong> Dato principal recomendado.
+              </li>
+              <li>
+                <strong>Área construida, dormitorios, baños, pisos y año:</strong> No aplican en terrenos sin construir; puedes dejarlos en 0 o vacíos.
+              </li>
+            </ul>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Área terreno (m²)</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Área terreno (m²)
+            </label>
             <input
               type="number"
               step="0.01"
+              placeholder={isLand ? "ej. 300" : "ej. 200"}
               {...register("landAreaM2", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.landAreaM2)}
             />
+            {errors.landAreaM2 && (
+              <p className="mt-1 text-xs text-red-600">{errors.landAreaM2.message}</p>
+            )}
           </div>
+
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Área construida (m²)</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Área construida (m²)
+            </label>
             <input
               type="number"
               step="0.01"
+              placeholder={isLand ? "0 o vacío" : "ej. 180"}
               {...register("builtAreaM2", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.builtAreaM2)}
             />
+            {errors.builtAreaM2 && (
+              <p className="mt-1 text-xs text-red-600">{errors.builtAreaM2.message}</p>
+            )}
           </div>
+
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Dormitorios</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Dormitorios
+            </label>
             <input
               type="number"
+              placeholder={isLand ? "0 o vacío" : "3"}
               {...register("bedrooms", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.bedrooms)}
             />
+            {errors.bedrooms && (
+              <p className="mt-1 text-xs text-red-600">{errors.bedrooms.message}</p>
+            )}
           </div>
+
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Baños</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Baños
+            </label>
             <input
               type="number"
+              placeholder={isLand ? "0 o vacío" : "2"}
               {...register("bathrooms", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.bathrooms)}
             />
+            {errors.bathrooms && (
+              <p className="mt-1 text-xs text-red-600">{errors.bathrooms.message}</p>
+            )}
           </div>
+
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Cocheras</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Cocheras
+            </label>
             <input
               type="number"
+              placeholder="0"
               {...register("parkingSpots", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.parkingSpots)}
             />
+            {errors.parkingSpots && (
+              <p className="mt-1 text-xs text-red-600">{errors.parkingSpots.message}</p>
+            )}
           </div>
+
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Pisos</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Pisos
+            </label>
             <input
               type="number"
+              placeholder={isLand ? "0 o vacío" : "1"}
               {...register("floors", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.floors)}
             />
+            {errors.floors && (
+              <p className="mt-1 text-xs text-red-600">{errors.floors.message}</p>
+            )}
           </div>
+
           <div>
-            <label className="mb-1 block text-sm text-neutral-700">Año de construcción</label>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Año de construcción
+            </label>
             <input
               type="number"
+              placeholder={isLand ? "0 o vacío" : "ej. 2022"}
               {...register("yearBuilt", { valueAsNumber: true })}
-              className={inputClass(false)}
+              className={inputClass(!!errors.yearBuilt)}
             />
+            {errors.yearBuilt && (
+              <p className="mt-1 text-xs text-red-600">{errors.yearBuilt.message}</p>
+            )}
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-neutral-700">
+        <label className="flex items-center gap-2 text-sm text-neutral-700 pt-2">
           <input type="checkbox" {...register("featured")} className="h-4 w-4 rounded" />
           Destacar en la página de inicio
         </label>

@@ -142,26 +142,69 @@ export interface PropertyFilters {
 // ============================================================
 // Validación con Zod (para Server Actions / formularios)
 // ============================================================
+// Funciones auxiliares para sanitizar entradas numéricas desde formularios web
+const emptyToUndefined = (val: unknown) => {
+  if (val === "" || val === null || val === undefined) return undefined;
+  const num = Number(val);
+  return isNaN(num) ? undefined : num;
+};
+
+const emptyOrZeroToUndefined = (val: unknown) => {
+  if (val === "" || val === null || val === undefined) return undefined;
+  const num = Number(val);
+  if (isNaN(num) || num <= 0) return undefined;
+  return num;
+};
+
 export const propertyFormSchema = z.object({
   title: z.string().min(5, "El título debe tener al menos 5 caracteres"),
   description: z.string().min(20, "La descripción es muy corta"),
-  type: z.nativeEnum(PropertyType),
+  type: z.nativeEnum(PropertyType, { message: "Selecciona el tipo de propiedad" }),
   operation: z.nativeEnum(OperationType),
   status: z.nativeEnum(PropertyStatus).default(PropertyStatus.DISPONIBLE),
-  price: z.number().positive("El precio debe ser mayor a 0"),
+  price: z.preprocess(
+    emptyToUndefined,
+    z.number({ message: "Ingresa un precio válido" }).positive("El precio debe ser mayor a 0")
+  ),
   currency: z.enum(["PEN", "USD"]).default("PEN"),
   address: z.string().optional(),
   district: z.string().min(2, "Ingresa el distrito"),
   city: z.string().default("Trujillo"),
-  latitude: z.number().min(-90).max(90).optional(),
-  longitude: z.number().min(-180).max(180).optional(),
-  landAreaM2: z.number().positive().optional(),
-  builtAreaM2: z.number().positive().optional(),
-  bedrooms: z.number().int().min(0).optional(),
-  bathrooms: z.number().int().min(0).optional(),
-  parkingSpots: z.number().int().min(0).default(0),
-  floors: z.number().int().min(0).optional(),
-  yearBuilt: z.number().int().min(1900).max(new Date().getFullYear()).optional(),
+  latitude: z.preprocess(emptyToUndefined, z.number().min(-90).max(90).optional()),
+  longitude: z.preprocess(emptyToUndefined, z.number().min(-180).max(180).optional()),
+  landAreaM2: z.preprocess(
+    emptyOrZeroToUndefined,
+    z.number().positive("El área de terreno debe ser mayor a 0").optional()
+  ),
+  builtAreaM2: z.preprocess(
+    emptyOrZeroToUndefined,
+    z.number().positive("El área construida debe ser mayor a 0").optional()
+  ),
+  bedrooms: z.preprocess(
+    emptyToUndefined,
+    z.number().int().min(0, "No puede ser negativo").optional()
+  ),
+  bathrooms: z.preprocess(
+    emptyToUndefined,
+    z.number().int().min(0, "No puede ser negativo").optional()
+  ),
+  parkingSpots: z.preprocess(
+    (v) => emptyToUndefined(v) ?? 0,
+    z.number().int().min(0).default(0)
+  ),
+  floors: z.preprocess(
+    emptyOrZeroToUndefined,
+    z.number().int().min(1, "Debe ser al menos 1 piso").optional()
+  ),
+  yearBuilt: z.preprocess(
+    emptyOrZeroToUndefined,
+    z
+      .number()
+      .int()
+      .min(1900, "El año debe ser a partir de 1900")
+      .max(new Date().getFullYear() + 2, "Año no válido")
+      .optional()
+  ),
   featured: z.boolean().default(false),
   amenityIds: z.array(z.string().uuid()).optional(),
 });

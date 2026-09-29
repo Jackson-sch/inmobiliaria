@@ -21,14 +21,28 @@ export function PropertySpecs({
 }: PropertySpecsProps) {
   return (
     <dl className="grid grid-cols-2 gap-4 rounded-xl border border-stone bg-white p-5 sm:grid-cols-4 shadow-2xs">
-      {bedrooms != null && (
+      {landAreaM2 != null && landAreaM2 > 0 && (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <Ruler className="h-5 w-5 text-emerald-600" />
+          <dd className="text-sm font-medium text-neutral-900">{landAreaM2} m²</dd>
+          <dt className="text-xs text-neutral-500">Área Terreno</dt>
+        </div>
+      )}
+      {builtAreaM2 != null && builtAreaM2 > 0 && (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <Ruler className="h-5 w-5 text-neutral-400" />
+          <dd className="text-sm font-medium text-neutral-900">{builtAreaM2} m²</dd>
+          <dt className="text-xs text-neutral-500">Área Construida</dt>
+        </div>
+      )}
+      {bedrooms != null && bedrooms > 0 && (
         <div className="flex flex-col items-center gap-1 text-center">
           <BedDouble className="h-5 w-5 text-neutral-400" />
           <dd className="text-sm font-medium text-neutral-900">{bedrooms}</dd>
           <dt className="text-xs text-neutral-500">Dormitorios</dt>
         </div>
       )}
-      {bathrooms != null && (
+      {bathrooms != null && bathrooms > 0 && (
         <div className="flex flex-col items-center gap-1 text-center">
           <Bath className="h-5 w-5 text-neutral-400" />
           <dd className="text-sm font-medium text-neutral-900">{bathrooms}</dd>
@@ -42,25 +56,14 @@ export function PropertySpecs({
           <dt className="text-xs text-neutral-500">Cocheras</dt>
         </div>
       )}
-      {(builtAreaM2 ?? landAreaM2) != null && (
-        <div className="flex flex-col items-center gap-1 text-center">
-          <Ruler className="h-5 w-5 text-neutral-400" />
-          <dd className="text-sm font-medium text-neutral-900">
-            {builtAreaM2 ?? landAreaM2} m²
-          </dd>
-          <dt className="text-xs text-neutral-500">
-            {builtAreaM2 ? "Construidos" : "Terreno"}
-          </dt>
-        </div>
-      )}
-      {yearBuilt != null && (
+      {yearBuilt != null && yearBuilt > 0 && (
         <div className="flex flex-col items-center gap-1 text-center">
           <Calendar className="h-5 w-5 text-neutral-400" />
           <dd className="text-sm font-medium text-neutral-900">{yearBuilt}</dd>
-          <dt className="text-xs text-neutral-500">Año</dt>
+          <dt className="text-xs text-neutral-500">Año const.</dt>
         </div>
       )}
-      {floors != null && (
+      {floors != null && floors > 0 && (
         <div className="flex flex-col items-center gap-1 text-center">
           <Building2 className="h-5 w-5 text-neutral-400" />
           <dd className="text-sm font-medium text-neutral-900">{floors}</dd>

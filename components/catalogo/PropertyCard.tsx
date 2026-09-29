@@ -67,12 +67,12 @@ export function PropertyCard({ property }: { property: Property }) {
         </p>
 
         <div className="flex flex-wrap gap-4 border-t border-stone pt-3 text-xs text-ink-soft">
-          {property.bedrooms != null && (
+          {property.bedrooms != null && property.bedrooms > 0 && (
             <span className="flex items-center gap-1.5">
               <BedDouble className="h-3.5 w-3.5" /> {property.bedrooms}
             </span>
           )}
-          {property.bathrooms != null && (
+          {property.bathrooms != null && property.bathrooms > 0 && (
             <span className="flex items-center gap-1.5">
               <Bath className="h-3.5 w-3.5" /> {property.bathrooms}
             </span>
@@ -82,10 +82,14 @@ export function PropertyCard({ property }: { property: Property }) {
               <Car className="h-3.5 w-3.5" /> {property.parkingSpots}
             </span>
           )}
-          {(property.builtAreaM2 ?? property.landAreaM2) != null && (
+          {(property.type === "terreno"
+            ? property.landAreaM2 ?? property.builtAreaM2
+            : property.builtAreaM2 ?? property.landAreaM2) != null && (
             <span className="flex items-center gap-1.5">
               <Ruler className="h-3.5 w-3.5" />
-              {property.builtAreaM2 ?? property.landAreaM2} m²
+              {property.type === "terreno"
+                ? `${property.landAreaM2 ?? property.builtAreaM2} m² terreno`
+                : `${property.builtAreaM2 ?? property.landAreaM2} m²`}
             </span>
           )}
         </div>
