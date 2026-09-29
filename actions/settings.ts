@@ -173,6 +173,8 @@ export interface ContactAndSocialConfig {
   whatsapp: string;
   email: string;
   mvcsNumber: string;
+  aboutPhotoUrl: string;
+  avatarUrl: string;
   facebookUrl: string;
   instagramUrl: string;
   tiktokUrl: string;
@@ -191,6 +193,8 @@ export async function getContactAndSocialSettings(): Promise<ContactAndSocialCon
       "contact_whatsapp",
       "contact_email",
       "contact_mvcs_number",
+      "contact_about_photo_url",
+      "contact_avatar_url",
       "social_facebook",
       "social_instagram",
       "social_tiktok",
@@ -209,6 +213,8 @@ export async function getContactAndSocialSettings(): Promise<ContactAndSocialCon
     whatsapp: map["contact_whatsapp"] || "+51 900 000 000",
     email: map["contact_email"] || "contacto@jeanmendocilla.pe",
     mvcsNumber: map["contact_mvcs_number"] || "PN-14285",
+    aboutPhotoUrl: map["contact_about_photo_url"] || "/jean-mendocilla-exterior.jpg",
+    avatarUrl: map["contact_avatar_url"] || "/jean-mendocilla-office.jpg",
     facebookUrl:
       map["social_facebook"] ||
       "https://www.facebook.com/jean.mendocillasebastian",
@@ -235,6 +241,8 @@ export async function saveContactAndSocialSettings(config: ContactAndSocialConfi
     { key: "contact_whatsapp", value: config.whatsapp.trim(), description: "Número de WhatsApp oficial" },
     { key: "contact_email", value: config.email.trim(), description: "Correo electrónico oficial" },
     { key: "contact_mvcs_number", value: config.mvcsNumber.trim(), description: "Número de Registro MVCS" },
+    { key: "contact_about_photo_url", value: config.aboutPhotoUrl?.trim() || "", description: "Foto del Asesor en la sección Sobre Mí" },
+    { key: "contact_avatar_url", value: config.avatarUrl?.trim() || "", description: "Foto de Perfil / Avatar del Asesor" },
     { key: "social_facebook", value: config.facebookUrl.trim(), description: "Enlace a perfil o página de Facebook" },
     { key: "social_instagram", value: config.instagramUrl.trim(), description: "Enlace a perfil de Instagram" },
     { key: "social_tiktok", value: config.tiktokUrl.trim(), description: "Enlace a cuenta de TikTok" },
@@ -260,6 +268,7 @@ export async function saveContactAndSocialSettings(config: ContactAndSocialConfi
       phone: config.phone.trim(),
       whatsapp: config.whatsapp.trim(),
       email: config.email.trim(),
+      avatar_url: config.avatarUrl?.trim() || config.aboutPhotoUrl?.trim() || "/jean-mendocilla-office.jpg",
       facebook_url: config.facebookUrl.trim() || null,
       instagram_url: config.instagramUrl.trim() || null,
       updated_at: new Date().toISOString(),

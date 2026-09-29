@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
-import { createLead } from "@/actions/properties";
+import { createLead } from "@/actions/leads";
 import { leadFormSchema, type LeadFormInput, type LeadFormValues } from "@/types";
 
 export function HomeContactForm() {

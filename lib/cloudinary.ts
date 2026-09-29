@@ -65,7 +65,10 @@ export async function applyCloudinaryConfig(): Promise<CloudinaryCredentials> {
 /**
  * Genera la firma para subida directa desde el cliente sin exponer el api_secret.
  */
-export async function getSignedUploadParams(propertyId: string): Promise<SignedUploadParams> {
+export async function getSignedUploadParams(
+  targetIdOrFolder: string,
+  isFolder = false
+): Promise<SignedUploadParams> {
   const creds = await applyCloudinaryConfig();
 
   if (!creds.cloudName || !creds.apiKey || !creds.apiSecret) {
@@ -75,7 +78,9 @@ export async function getSignedUploadParams(propertyId: string): Promise<SignedU
   }
 
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = `${CLOUDINARY_UPLOAD_FOLDER}/${propertyId}`;
+  const folder = isFolder
+    ? targetIdOrFolder
+    : `${CLOUDINARY_UPLOAD_FOLDER}/${targetIdOrFolder}`;
 
   const signature = cloudinary.utils.api_sign_request(
     { timestamp, folder },

@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import { BedDouble, Bath, Car, Ruler, Calendar, Building2, MapPin, ExternalLink, ShieldCheck } from "lucide-react";
 import { getPropertyBySlug } from "@/lib/queries/properties";
+import { getContactAndSocialSettings } from "@/actions/settings";
 import { PropertyGallery } from "@/components/detalle/PropertyGallery";
+import { PropertySpecs } from "@/components/detalle/PropertySpecs";
+import { PropertyLocationMap } from "@/components/detalle/PropertyLocationMap";
+import { PropertyAgentSidebar } from "@/components/detalle/PropertyAgentSidebar";
+import { PropertyPrintHeader, PropertyPrintFooter } from "@/components/detalle/PropertyPrintSheet";
 import { MortgageCalculator } from "@/components/detalle/MortgageCalculator";
 import { SharePropertyButton } from "@/components/detalle/SharePropertyButton";
 import { PrintPropertyButton } from "@/components/detalle/PrintPropertyButton";
-import { WhatsAppButton } from "@/components/detalle/WhatsAppButton";
-import { ContactForm } from "@/components/detalle/ContactForm";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { getContactAndSocialSettings } from "@/actions/settings";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -93,37 +93,20 @@ export default async function PropertyDetailPage({ params }: PageProps) {
       ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&z=15&output=embed`
       : `https://www.google.com/maps?q=${mapSearchQuery}&z=14&output=embed`;
 
+  const agentName = property.agent?.fullName || contact.fullName || "Jean Mendocilla";
+  const agentPhone = property.agent?.whatsapp || contact.whatsapp || contact.phone;
+  const avatarUrl = property.agent?.avatarUrl || contact.avatarUrl || contact.aboutPhotoUrl || "/jean-mendocilla-office.jpg";
+
   return (
     <>
       <SiteHeader />
       <div className="mx-auto max-w-6xl px-4 py-8">
-        {/* Cabecera exclusiva para Ficha Técnica Impresa / PDF */}
-        <div className="hidden print:block mb-8 border-b-2 border-stone-deep pb-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-sage-deep">
-                Ficha Técnica Inmobiliaria {contact.mvcsNumber ? `· Registro MVCS ${contact.mvcsNumber}` : ""}
-              </span>
-              <h2 className="font-display text-2xl font-bold text-ink mt-0.5 uppercase">
-                {contact.fullName || "Jean Mendocilla"}
-              </h2>
-              <p className="text-xs text-ink-soft">
-                Asesoría Inmobiliaria Profesional · Trujillo, La Libertad
-              </p>
-              <p className="text-xs text-neutral-500 mt-1">
-                WhatsApp / Celular: {contact.whatsapp || contact.phone} · Web: jeanmendocilla.pe
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="inline-block rounded-md border border-stone bg-linen px-3 py-1 text-xs font-semibold text-ink">
-                Ref: {property.slug}
-              </span>
-              <p className="text-[10px] text-neutral-400 mt-1">
-                Documento Oficial
-              </p>
-            </div>
-          </div>
-        </div>
+        <PropertyPrintHeader
+          agentName={agentName}
+          agentPhone={agentPhone}
+          mvcsNumber={contact.mvcsNumber}
+          propertySlug={property.slug}
+        />
 
         <PropertyGallery images={property.images ?? []} title={property.title} />
 
@@ -158,56 +141,19 @@ export default async function PropertyDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            <dl className="grid grid-cols-2 gap-4 rounded-xl border border-stone bg-white p-5 sm:grid-cols-4">
-              {property.bedrooms != null && (
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <BedDouble className="h-5 w-5 text-neutral-400" />
-                  <dd className="text-sm font-medium">{property.bedrooms}</dd>
-                  <dt className="text-xs text-neutral-500">Dormitorios</dt>
-                </div>
-              )}
-              {property.bathrooms != null && (
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <Bath className="h-5 w-5 text-neutral-400" />
-                  <dd className="text-sm font-medium">{property.bathrooms}</dd>
-                  <dt className="text-xs text-neutral-500">Baños</dt>
-                </div>
-              )}
-              {property.parkingSpots > 0 && (
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <Car className="h-5 w-5 text-neutral-400" />
-                  <dd className="text-sm font-medium">{property.parkingSpots}</dd>
-                  <dt className="text-xs text-neutral-500">Cocheras</dt>
-                </div>
-              )}
-              {(property.builtAreaM2 ?? property.landAreaM2) != null && (
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <Ruler className="h-5 w-5 text-neutral-400" />
-                  <dd className="text-sm font-medium">
-                    {property.builtAreaM2 ?? property.landAreaM2} m²
-                  </dd>
-                  <dt className="text-xs text-neutral-500">
-                    {property.builtAreaM2 ? "Construidos" : "Terreno"}
-                  </dt>
-                </div>
-              )}
-              {property.yearBuilt != null && (
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <Calendar className="h-5 w-5 text-neutral-400" />
-                  <dd className="text-sm font-medium">{property.yearBuilt}</dd>
-                  <dt className="text-xs text-neutral-500">Año</dt>
-                </div>
-              )}
-              {property.floors != null && (
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <Building2 className="h-5 w-5 text-neutral-400" />
-                  <dd className="text-sm font-medium">{property.floors}</dd>
-                  <dt className="text-xs text-neutral-500">Pisos</dt>
-                </div>
-              )}
-            </dl>
+            {/* Ficha técnica de especificaciones */}
+            <PropertySpecs
+              bedrooms={property.bedrooms}
+              bathrooms={property.bathrooms}
+              parkingSpots={property.parkingSpots}
+              builtAreaM2={property.builtAreaM2}
+              landAreaM2={property.landAreaM2}
+              yearBuilt={property.yearBuilt}
+              floors={property.floors}
+            />
 
-            <div className="rounded-xl border border-stone bg-white p-6">
+            {/* Descripción */}
+            <div className="rounded-xl border border-stone bg-white p-6 shadow-2xs">
               <h2 className="mb-2 font-medium text-neutral-900 font-display text-lg">
                 Descripción
               </h2>
@@ -216,8 +162,9 @@ export default async function PropertyDetailPage({ params }: PageProps) {
               </p>
             </div>
 
+            {/* Amenidades */}
             {property.amenities && property.amenities.length > 0 && (
-              <div className="rounded-xl border border-stone bg-white p-6">
+              <div className="rounded-xl border border-stone bg-white p-6 shadow-2xs">
                 <h2 className="mb-3 font-medium text-neutral-900 font-display text-lg">
                   Amenidades
                 </h2>
@@ -234,105 +181,46 @@ export default async function PropertyDetailPage({ params }: PageProps) {
               </div>
             )}
 
+            {/* Simulador de crédito hipotecario */}
             {property.operation === "venta" && (
               <div className="print:hidden">
                 <MortgageCalculator
                   propertyPrice={Number(property.price)}
                   currency={property.currency as "PEN" | "USD"}
                   propertyTitle={property.title}
-                  agentPhone={property.agent?.whatsapp || contact.whatsapp}
-                  agentName={property.agent?.fullName || contact.fullName || "Jean Mendocilla"}
+                  agentPhone={agentPhone}
+                  agentName={agentName}
                 />
               </div>
             )}
 
+            {/* Mapa de ubicación */}
             {mapEmbedSrc && (
-              <div className="rounded-xl border border-stone bg-white p-6 print:break-inside-avoid">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-medium text-neutral-900 font-display text-lg flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-sage-deep" />
-                    Ubicación y Entorno
-                  </h2>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      `${property.address ? `${property.address}, ` : ""}${property.district}, ${property.city}, Perú`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-sage-deep hover:underline"
-                  >
-                    Ver en Google Maps
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-                <iframe
-                  src={mapEmbedSrc}
-                  className="h-72 w-full rounded-xl border border-stone"
-                  loading="lazy"
-                  title={`Ubicación de ${property.title}`}
-                />
-                <p className="mt-2 text-xs text-neutral-400">
-                  Ubicación referencial: {property.address ? `${property.address}, ` : ""}{property.district}, {property.city}.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Columna lateral: contacto */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start print:hidden">
-            {/* Tarjeta del Asesor */}
-            <div className="rounded-xl border border-stone bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-3.5">
-                <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-sage/40 bg-stone flex-shrink-0 shadow-inner">
-                  <Image
-                    src="/jean-mendocilla-office.jpg"
-                    alt={property.agent?.fullName || contact.fullName || "Jean Mendocilla"}
-                    fill
-                    className="object-cover"
-                    sizes="56px"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-display font-semibold text-ink text-base">
-                    {property.agent?.fullName || contact.fullName || "Jean Mendocilla"}
-                  </h3>
-                  <p className="text-xs text-sage-deep font-medium">
-                    Asesor Inmobiliario · Trujillo
-                  </p>
-                  {contact.mvcsNumber && (
-                    <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
-                      <ShieldCheck className="h-3 w-3" />
-                      <span>Registro MVCS: {contact.mvcsNumber}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {(property.agent?.whatsapp || contact.whatsapp) && (
-              <WhatsAppButton
-                phone={property.agent?.whatsapp || contact.whatsapp}
-                propertyTitle={property.title}
+              <PropertyLocationMap
+                mapEmbedSrc={mapEmbedSrc}
+                title={property.title}
+                address={property.address}
+                district={property.district}
+                city={property.city}
               />
             )}
-            <ContactForm propertyId={property.id} />
-          </aside>
+          </div>
+
+          {/* Columna lateral del Asesor */}
+          <PropertyAgentSidebar
+            agentName={agentName}
+            agentPhone={agentPhone}
+            avatarUrl={avatarUrl}
+            mvcsNumber={contact.mvcsNumber}
+            propertyTitle={property.title}
+            propertyId={property.id}
+          />
         </div>
 
-        {/* Pie de página exclusivo para Ficha Impresa / PDF */}
-        <div className="hidden print:block mt-12 border-t-2 border-stone-deep pt-4">
-          <div className="flex items-center justify-between text-xs text-neutral-600">
-            <div>
-              <p className="font-semibold text-ink">{contact.fullName || "Jean Mendocilla"} — Asesoría Inmobiliaria</p>
-              <p className="mt-0.5">Para coordinar una visita o consultas sobre esta propiedad, contáctame directamente.</p>
-              <p className="mt-0.5 font-medium text-sage-deep">Tel / WhatsApp: {contact.whatsapp || contact.phone}</p>
-            </div>
-            <div className="text-right">
-              <p className="font-mono text-[11px] text-ink">jeanmendocilla.pe</p>
-              <p className="text-[10px] text-neutral-400 mt-0.5">Ficha informativa generada para clientes.</p>
-            </div>
-          </div>
-        </div>
+        <PropertyPrintFooter
+          agentName={agentName}
+          agentPhone={agentPhone}
+        />
       </div>
       <SiteFooter />
     </>

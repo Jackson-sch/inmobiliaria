@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3DCBA" />
+      <stop offset="50%" stop-color="#D4AF7A" />
+      <stop offset="100%" stop-color="#A87F4A" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#182622" />
+      <stop offset="100%" stop-color="#0E1614" />
+    </linearGradient>
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Contenedor redondeado tipo squircle de lujo -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bgGrad)" stroke="url(#goldGrad)" stroke-width="12" />
+  <rect x="30" y="30" width="452" height="452" rx="94" fill="none" stroke="#D4AF7A" stroke-width="2" stroke-opacity="0.25" />
+
+  <!-- Techo Arquitectónico / Corona Inmobiliaria -->
+  <g filter="url(#subtleGlow)">
+    <path d="M 125 195 L 256 95 L 387 195" fill="none" stroke="url(#goldGrad)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="256" cy="76" r="10" fill="#F3DCBA" />
+    <line x1="335" y1="108" x2="335" y2="148" stroke="url(#goldGrad)" stroke-width="14" stroke-linecap="round" />
+  </g>
+
+  <!-- Monograma JM elegante y de alta legibilidad -->
+  <text x="256" y="375" font-family="'Playfair Display', Georgia, 'Times New Roman', serif" font-size="205" font-weight="700" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="-5" filter="url(#subtleGlow)">
+    JM
+  </text>
+</svg>

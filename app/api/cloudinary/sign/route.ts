@@ -20,15 +20,19 @@ export async function GET(request: NextRequest) {
   }
 
   const propertyId = request.nextUrl.searchParams.get("propertyId");
-  if (!propertyId) {
+  const folder = request.nextUrl.searchParams.get("folder");
+
+  if (!propertyId && !folder) {
     return NextResponse.json(
-      { error: "propertyId es requerido" },
+      { error: "propertyId o folder es requerido" },
       { status: 400 }
     );
   }
 
   try {
-    const params = await getSignedUploadParams(propertyId);
+    const params = folder
+      ? await getSignedUploadParams(folder, true)
+      : await getSignedUploadParams(propertyId!, false);
     return NextResponse.json(params);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

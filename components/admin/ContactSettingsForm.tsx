@@ -17,6 +17,7 @@ import {
   saveContactAndSocialSettings,
   type ContactAndSocialConfig,
 } from "@/actions/settings";
+import { ProfilePhotoUploader } from "@/components/admin/ProfilePhotoUploader";
 
 export function ContactSettingsForm({
   initialConfig,
@@ -39,7 +40,7 @@ export function ContactSettingsForm({
     if (res.success) {
       setStatusMessage({
         type: "success",
-        text: "Datos de contacto y redes sociales guardados exitosamente. Ya están visibles en toda la web.",
+        text: "Datos del asesor, fotografía y redes sociales guardados exitosamente. Ya están visibles en toda la web.",
       });
     } else {
       setStatusMessage({
@@ -58,17 +59,31 @@ export function ContactSettingsForm({
         </div>
         <div>
           <h2 className="font-display text-lg font-semibold text-ink">
-            Datos de Contacto y Redes Sociales
+            Identidad, Fotografía y Canales del Asesor
           </h2>
           <p className="text-xs text-neutral-500">
-            Personaliza el número de WhatsApp, teléfono, correo y enlaces de redes que aparecen en toda la web.
+            Personaliza la foto de la sección &ldquo;Sobre mí&rdquo;, nombre, WhatsApp, registro MVCS y redes sociales.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="mt-6 space-y-6">
+      <form onSubmit={handleSave} className="mt-6 space-y-8">
+        {/* Bloque: Fotografía en Cloudinary */}
+        <ProfilePhotoUploader
+          photoUrl={config.aboutPhotoUrl}
+          agentName={config.fullName}
+          disabled={isSaving}
+          onPhotoChange={(newUrl) =>
+            setConfig((prev) => ({
+              ...prev,
+              aboutPhotoUrl: newUrl,
+              avatarUrl: newUrl,
+            }))
+          }
+        />
+
         {/* Bloque 1: Datos de Contacto Directo */}
-        <div>
+        <div className="pt-2 border-t border-stone/60">
           <h3 className="text-xs font-bold uppercase tracking-wider text-sage-deep mb-3 flex items-center gap-1.5">
             <Phone className="h-3.5 w-3.5" />
             Canales de Atención Directa
@@ -261,7 +276,7 @@ export function ContactSettingsForm({
             ) : (
               <Save className="h-3.5 w-3.5" />
             )}
-            {isSaving ? "Guardando..." : "Guardar Contacto y Redes"}
+            {isSaving ? "Guardando..." : "Guardar Contacto, Foto y Redes"}
           </button>
         </div>
       </form>
