@@ -16,7 +16,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPropertySchema, buildBreadcrumbSchema } from "@/lib/seo";
-import { getOptimizedOgImageUrl, getSiteUrl } from "@/lib/metadata";
+import { getOptimizedOgImageUrl, getSiteUrl, getEffectiveSiteUrl } from "@/lib/metadata";
 import { getPdfDownloadUrl } from "@/lib/cloudinary";
 
 interface PageProps {
@@ -49,28 +49,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const opLabel = property.operation === "venta" ? "en venta" : "en alquiler";
 
   const title = `${property.title} | ${formattedPrice}`;
-  const description = property.description
-    ? property.description.slice(0, 155)
+  const cleanDescription = property.description
+    ? property.description.replace(/[\r\n\t]+/g, " ").replace(/\s{2,}/g, " ").slice(0, 160).trim()
     : `${typeLabel} ${opLabel} en ${property.district}, ${property.city}. ${formattedPrice}. Asesoría Jean Mendocilla.`;
 
-  const siteUrl = getSiteUrl();
-  const ogImageUrl = getOptimizedOgImageUrl(cover?.secureUrl || "/hero-property.jpg");
+  const siteUrl = await getEffectiveSiteUrl();
+  const ogImageUrl = getOptimizedOgImageUrl(cover?.secureUrl || "/hero-property.jpg", siteUrl);
   const canonicalUrl = `${siteUrl}/propiedades/${slug}`;
 
   return {
     metadataBase: new URL(siteUrl),
     title,
-    description,
+    description: cleanDescription,
     alternates: {
       canonical: canonicalUrl,
     },
     openGraph: {
       title,
-      description,
+      description: cleanDescription,
       url: canonicalUrl,
       siteName: "Jean Mendocilla Asesoría Inmobiliaria",
       locale: "es_PE",
-      type: "article",
+      type: "website",
       images: [
         {
           url: ogImageUrl,
@@ -85,7 +85,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card: "summary_large_image",
       title,
-      description,
+      description: cleanDescription,
       images: [ogImageUrl],
     },
   };

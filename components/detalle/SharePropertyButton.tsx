@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2, Check, MessageCircle, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 interface SharePropertyButtonProps {
   title: string;
@@ -56,6 +57,14 @@ export function SharePropertyButton({
 
   const handleWhatsApp = () => {
     if (typeof window === "undefined") return;
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    if (isLocal) {
+      toast.info(
+        "Aviso: Al compartir desde localhost, WhatsApp no puede mostrar la portada en tu celular hasta que esté publicado en tu dominio o Vercel."
+      );
+    }
     const url = window.location.href;
     const text = `Hola, mira esta propiedad en ${district}: *${title}* (${price})\n\n${url}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, "_blank");
