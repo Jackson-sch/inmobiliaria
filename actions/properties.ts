@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { deleteCloudinaryFolder, deleteCloudinaryImage } from "@/lib/cloudinary";
+import { deleteCloudinaryFolder, deleteCloudinaryImage, deleteCloudinaryResource } from "@/lib/cloudinary";
 import {
   propertyFormSchema,
   leadFormSchema,
   type PropertyFormValues,
   type LeadFormValues,
   type NewPropertyImageInput,
+  type InitialPropertyImageInput,
 } from "@/types";
 
 export type ActionResult<T = undefined> =
@@ -44,7 +45,9 @@ async function requireAuthenticatedAgent() {
 // ============================================================
 export async function createProperty(
   agentId: string,
-  input: PropertyFormValues
+  input: PropertyFormValues,
+  propertyId?: string,
+  initialImages: InitialPropertyImageInput[] = []
 ): Promise<ActionResult<{ id: string; slug: string }>> {
   const parsed = propertyFormSchema.safeParse(input);
   if (!parsed.success) {
@@ -77,32 +80,43 @@ export async function createProperty(
 
   const { amenityIds, ...propertyData } = data;
 
+  const insertPayload: Record<string, any> = {
+    agent_id: agentId,
+    title: propertyData.title,
+    slug,
+    description: propertyData.description,
+    type: propertyData.type,
+    operation: propertyData.operation,
+    status: propertyData.status,
+    price: propertyData.price,
+    currency: propertyData.currency,
+    address: propertyData.address ?? null,
+    district: propertyData.district,
+    city: propertyData.city,
+    latitude: propertyData.latitude ?? null,
+    longitude: propertyData.longitude ?? null,
+    land_area_m2: propertyData.landAreaM2 ?? null,
+    built_area_m2: propertyData.builtAreaM2 ?? null,
+    bedrooms: propertyData.bedrooms ?? null,
+    bathrooms: propertyData.bathrooms ?? null,
+    parking_spots: propertyData.parkingSpots,
+    floors: propertyData.floors ?? null,
+    year_built: propertyData.yearBuilt ?? null,
+    featured: propertyData.featured,
+    video_url: propertyData.videoUrl ?? null,
+    video_public_id: propertyData.videoPublicId ?? null,
+    pdf_url: propertyData.pdfUrl ?? null,
+    pdf_public_id: propertyData.pdfPublicId ?? null,
+    pdf_name: propertyData.pdfName ?? null,
+  };
+
+  if (propertyId) {
+    insertPayload.id = propertyId;
+  }
+
   const { data: property, error } = await supabase
     .from("properties")
-    .insert({
-      agent_id: agentId,
-      title: propertyData.title,
-      slug,
-      description: propertyData.description,
-      type: propertyData.type,
-      operation: propertyData.operation,
-      status: propertyData.status,
-      price: propertyData.price,
-      currency: propertyData.currency,
-      address: propertyData.address ?? null,
-      district: propertyData.district,
-      city: propertyData.city,
-      latitude: propertyData.latitude ?? null,
-      longitude: propertyData.longitude ?? null,
-      land_area_m2: propertyData.landAreaM2 ?? null,
-      built_area_m2: propertyData.builtAreaM2 ?? null,
-      bedrooms: propertyData.bedrooms ?? null,
-      bathrooms: propertyData.bathrooms ?? null,
-      parking_spots: propertyData.parkingSpots,
-      floors: propertyData.floors ?? null,
-      year_built: propertyData.yearBuilt ?? null,
-      featured: propertyData.featured,
-    })
+    .insert(insertPayload)
     .select("id, slug")
     .single();
 
@@ -121,6 +135,29 @@ export async function createProperty(
 
     if (amenitiesError) {
       return { success: false, error: amenitiesError.message };
+    }
+  }
+
+  // Insertar imágenes subidas previamente
+  if (initialImages && initialImages.length > 0) {
+    const hasCover = initialImages.some((img) => img.isCover);
+    const imageRows = initialImages.map((img, idx) => ({
+      property_id: property.id,
+      cloudinary_public_id: img.cloudinaryPublicId,
+      secure_url: img.secureUrl,
+      width: img.width ?? null,
+      height: img.height ?? null,
+      format: img.format ?? null,
+      is_cover: hasCover ? img.isCover : idx === 0,
+      sort_order: img.sortOrder ?? idx,
+    }));
+
+    const { error: imagesError } = await supabase
+      .from("property_images")
+      .insert(imageRows);
+
+    if (imagesError) {
+      console.error("Error al registrar fotos en BD:", imagesError);
     }
   }
 
@@ -172,6 +209,11 @@ export async function updateProperty(
       floors: propertyData.floors ?? null,
       year_built: propertyData.yearBuilt ?? null,
       featured: propertyData.featured,
+      video_url: propertyData.videoUrl ?? null,
+      video_public_id: propertyData.videoPublicId ?? null,
+      pdf_url: propertyData.pdfUrl ?? null,
+      pdf_public_id: propertyData.pdfPublicId ?? null,
+      pdf_name: propertyData.pdfName ?? null,
     })
     .eq("id", propertyId)
     .select("id, slug")
@@ -223,6 +265,44 @@ export async function deleteProperty(propertyId: string): Promise<ActionResult> 
   revalidatePath("/propiedades");
   revalidatePath("/admin/propiedades");
 
+  return { success: true, data: undefined };
+}
+
+/**
+ * Elimina video o PDF adjunto a una propiedad.
+ */
+export async function deletePropertyMedia(
+  propertyId: string,
+  mediaType: "video" | "pdf",
+  publicId?: string | null
+): Promise<ActionResult> {
+  const { supabase } = await requireAuthenticatedAgent();
+
+  if (mediaType === "video") {
+    const { error } = await supabase
+      .from("properties")
+      .update({ video_url: null, video_public_id: null })
+      .eq("id", propertyId);
+    if (error) return { success: false, error: error.message };
+
+    if (publicId) {
+      await deleteCloudinaryResource(publicId, "video").catch(() => {});
+    }
+  } else if (mediaType === "pdf") {
+    const { error } = await supabase
+      .from("properties")
+      .update({ pdf_url: null, pdf_public_id: null, pdf_name: null })
+      .eq("id", propertyId);
+    if (error) return { success: false, error: error.message };
+
+    if (publicId) {
+      await deleteCloudinaryResource(publicId, "image").catch(() => {});
+      await deleteCloudinaryResource(publicId, "raw").catch(() => {});
+    }
+  }
+
+  revalidatePath("/propiedades");
+  revalidatePath("/admin/propiedades");
   return { success: true, data: undefined };
 }
 
@@ -299,6 +379,18 @@ export async function deletePropertyImage(imageId: string): Promise<ActionResult
 
   return { success: true, data: undefined };
 }
+
+/**
+ * Elimina una imagen subida directamente a Cloudinary antes de guardar la propiedad.
+ */
+export async function deleteUploadedImage(cloudinaryPublicId: string): Promise<ActionResult> {
+  await requireAuthenticatedAgent();
+  if (cloudinaryPublicId) {
+    await deleteCloudinaryImage(cloudinaryPublicId).catch(() => {});
+  }
+  return { success: true, data: undefined };
+}
+
 
 // ============================================================
 // Marcar una imagen como portada

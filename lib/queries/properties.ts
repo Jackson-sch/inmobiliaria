@@ -33,7 +33,8 @@ export async function getProperties(
       id, agent_id, title, slug, description, type, operation, status,
       price, currency, address, district, city, latitude, longitude,
       land_area_m2, built_area_m2, bedrooms, bathrooms, parking_spots,
-      floors, year_built, featured, views_count, created_at, updated_at,
+      floors, year_built, featured, views_count, video_url, video_public_id,
+      pdf_url, pdf_public_id, pdf_name, created_at, updated_at,
       images:property_images(id, secure_url, is_cover, sort_order)
       `,
       { count: "exact" }
@@ -91,6 +92,11 @@ export async function getProperties(
     yearBuilt: row.year_built,
     featured: row.featured,
     viewsCount: row.views_count,
+    videoUrl: row.video_url,
+    videoPublicId: row.video_public_id,
+    pdfUrl: row.pdf_url,
+    pdfPublicId: row.pdf_public_id,
+    pdfName: row.pdf_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     images: (row.images ?? [])
@@ -134,7 +140,8 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
       id, agent_id, title, slug, description, type, operation, status,
       price, currency, address, district, city, latitude, longitude,
       land_area_m2, built_area_m2, bedrooms, bathrooms, parking_spots,
-      floors, year_built, featured, views_count, created_at, updated_at,
+      floors, year_built, featured, views_count, video_url, video_public_id,
+      pdf_url, pdf_public_id, pdf_name, created_at, updated_at,
       images:property_images(id, secure_url, cloudinary_public_id, width, height, format, is_cover, sort_order, created_at),
       amenities:property_amenities(amenity:amenities(id, name, icon)),
       agent:agents(id, full_name, phone, whatsapp, email, avatar_url, facebook_url, instagram_url)
@@ -176,6 +183,11 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
     yearBuilt: row.year_built,
     featured: row.featured,
     viewsCount: row.views_count,
+    videoUrl: row.video_url,
+    videoPublicId: row.video_public_id,
+    pdfUrl: row.pdf_url,
+    pdfPublicId: row.pdf_public_id,
+    pdfName: row.pdf_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     images: (row.images ?? [])

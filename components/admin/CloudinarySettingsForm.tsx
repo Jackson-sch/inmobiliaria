@@ -192,9 +192,27 @@ export function CloudinarySettingsForm({
         <h4 className="font-semibold text-ink">¿Dónde encontrar estos datos en Cloudinary?</h4>
         <ol className="list-decimal list-inside space-y-1 pl-1">
           <li>Inicia sesión en <a href="https://cloudinary.com" target="_blank" rel="noopener noreferrer" className="text-sage-deep underline font-medium">cloudinary.com</a>.</li>
-          <li>En la pantalla principal (**Dashboard** o **Programmable Media**), localiza la tarjeta **"Product Environment Credentials"**.</li>
-          <li>Copia tu **Cloud Name**, **API Key** y haz clic en el icono de ojo para copiar el **API Secret**.</li>
-          <li>Pégalos aquí y haz clic en **"Probar Conexión"** y luego en **"Guardar"**.</li>
+          <li>En la pantalla principal (<strong>Dashboard</strong> o <strong>Programmable Media</strong>), localiza la tarjeta <strong>&quot;Product Environment Credentials&quot;</strong>.</li>
+          <li>Copia tu <strong>Cloud Name</strong>, <strong>API Key</strong> y haz clic en el icono de ojo para copiar el <strong>API Secret</strong>.</li>
+          <li>Pégalos aquí y haz clic en <strong>&quot;Probar Conexión&quot;</strong> y luego en <strong>&quot;Guardar&quot;</strong>.</li>
+        </ol>
+      </div>
+
+      {/* Aviso importante para PDFs */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-5 text-xs text-amber-900 space-y-2">
+        <h4 className="font-semibold text-amber-950 flex items-center gap-1.5">
+          <span>📄</span> Habilitar descarga y lectura de PDFs (Brochures / Planos)
+        </h4>
+        <p className="leading-relaxed text-amber-800">
+          Por políticas de seguridad, Cloudinary restringe de forma predeterminada la entrega pública de archivos PDF (arrojando el error <em>&quot;deny or ACL failure&quot;</em>). Para permitir que tus clientes lean y descarguen brochures:
+        </p>
+        <ol className="list-decimal list-inside space-y-1 pl-1 text-amber-900 font-medium">
+          <li>Entra a tu consola de <a href="https://cloudinary.com/console" target="_blank" rel="noopener noreferrer" className="underline text-amber-950 font-bold">Cloudinary</a>.</li>
+          <li>Haz clic en el icono de <strong>Ajustes ⚙️ (Settings)</strong>.</li>
+          <li>Selecciona la pestaña <strong>Security</strong>.</li>
+          <li>Desplázate hasta <strong>&quot;PDF and ZIP files delivery&quot;</strong>.</li>
+          <li>Marca la casilla <strong>&quot;Allow delivery of PDF and ZIP files&quot;</strong>.</li>
+          <li>Haz clic en <strong>Save</strong> al final de la página.</li>
         </ol>
       </div>
     </div>

@@ -100,18 +100,46 @@ export async function getSignedUploadParams(
  * Elimina una imagen de Cloudinary por su public_id.
  */
 export async function deleteCloudinaryImage(publicId: string): Promise<void> {
-  await applyCloudinaryConfig();
-  await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+  return deleteCloudinaryResource(publicId, "image");
 }
 
 /**
- * Elimina todas las imágenes de una propiedad de un solo golpe.
+ * Elimina un recurso de Cloudinary (imagen, video o raw/pdf) por su public_id.
+ */
+export async function deleteCloudinaryResource(
+  publicId: string,
+  resourceType: "image" | "video" | "raw" = "image"
+): Promise<void> {
+  try {
+    await applyCloudinaryConfig();
+    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+  } catch (err) {
+    console.error(`Error al eliminar recurso ${publicId} (${resourceType}):`, err);
+  }
+}
+
+/**
+ * Elimina todas las imágenes y recursos de una propiedad de un solo golpe.
  */
 export async function deleteCloudinaryFolder(propertyId: string): Promise<void> {
   await applyCloudinaryConfig();
   const folder = `${CLOUDINARY_UPLOAD_FOLDER}/${propertyId}`;
-  await cloudinary.api.delete_resources_by_prefix(folder);
+  await cloudinary.api.delete_resources_by_prefix(folder, { resource_type: "image" }).catch(() => {});
+  await cloudinary.api.delete_resources_by_prefix(folder, { resource_type: "video" }).catch(() => {});
+  await cloudinary.api.delete_resources_by_prefix(folder, { resource_type: "raw" }).catch(() => {});
   await cloudinary.api.delete_folder(folder).catch(() => {
     // La carpeta puede no eliminarse si Cloudinary aún no sincroniza; no es crítico.
   });
 }
+
+/**
+ * Transforma una URL de Cloudinary para forzar la descarga de un PDF con su nombre adecuado.
+ */
+export function getPdfDownloadUrl(url: string, filename?: string | null): string {
+  if (!url || !url.includes("cloudinary.com")) return url;
+  if (url.includes("/upload/fl_attachment")) return url;
+  const cleanName = filename ? encodeURIComponent(filename.replace(/\.pdf$/i, "").trim().replace(/\s+/g, "_")) : "";
+  const flag = cleanName ? `fl_attachment:${cleanName}` : "fl_attachment";
+  return url.replace("/upload/", `/upload/${flag}/`);
+}
+

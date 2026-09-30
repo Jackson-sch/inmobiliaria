@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { createProperty, updateProperty, addPropertyImage } from "@/actions/properties";
+import { createProperty, updateProperty } from "@/actions/properties";
 import { toast } from "sonner";
 import {
   propertyFormSchema,
@@ -16,8 +16,10 @@ import {
   type PropertyFormValues,
   type Amenity,
   type Property,
+  type InitialPropertyImageInput,
 } from "@/types";
-import { ImageUploader, type StagedImage, fetchSignature, uploadToCloudinary } from "./ImageUploader";
+import { ImageUploader } from "./ImageUploader";
+import { MediaUploader } from "./MediaUploader";
 
 interface PropertyFormProps {
   agentId: string;
@@ -55,14 +57,22 @@ function inputClass(hasError: boolean) {
 export function PropertyForm({ agentId, amenities, property }: PropertyFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [stagedImages, setStagedImages] = useState<StagedImage[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const isEditing = Boolean(property);
+
+  // ID persistente para la propiedad (permite subir a Cloudinary antes de guardar en BD)
+  const propertyIdRef = useRef<string>(property?.id || crypto.randomUUID());
+  const targetPropertyId = propertyIdRef.current;
+
+  // Estado de imágenes subidas en modo creación
+  const [uploadedImages, setUploadedImages] = useState<InitialPropertyImageInput[]>([]);
+  const [isImagesUploading, setIsImagesUploading] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PropertyFormInput, any, PropertyFormValues>({
     resolver: zodResolver(propertyFormSchema),
@@ -88,6 +98,11 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
           floors: property.floors ?? undefined,
           yearBuilt: property.yearBuilt ?? undefined,
           featured: property.featured,
+          videoUrl: property.videoUrl ?? undefined,
+          videoPublicId: property.videoPublicId ?? undefined,
+          pdfUrl: property.pdfUrl ?? undefined,
+          pdfPublicId: property.pdfPublicId ?? undefined,
+          pdfName: property.pdfName ?? undefined,
           amenityIds: property.amenities?.map((a) => a.id) ?? [],
         }
       : {
@@ -106,39 +121,12 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
 
     const result = isEditing
       ? await updateProperty(property!.id, values)
-      : await createProperty(agentId, values);
+      : await createProperty(agentId, values, targetPropertyId, uploadedImages);
 
     if (!result.success) {
       setServerError(result.error);
       toast.error(result.error || "Ocurrió un error al guardar la propiedad");
       return;
-    }
-
-    // Si estamos en creación y hay fotos seleccionadas, subirlas a Cloudinary
-    if (!isEditing && stagedImages.length > 0) {
-      const propertyId = result.data.id;
-      for (let i = 0; i < stagedImages.length; i++) {
-        const item = stagedImages[i];
-        setUploadProgress(`Subiendo foto ${i + 1} de ${stagedImages.length} a Cloudinary...`);
-        try {
-          const sig = await fetchSignature(propertyId);
-          const uploadRes = await uploadToCloudinary(item.file, sig);
-          await addPropertyImage({
-            propertyId,
-            cloudinaryPublicId: uploadRes.public_id,
-            secureUrl: uploadRes.secure_url,
-            width: uploadRes.width,
-            height: uploadRes.height,
-            format: uploadRes.format,
-            isCover: item.isCover,
-            sortOrder: i,
-          });
-        } catch (err: any) {
-          console.error("Error al subir foto:", err);
-          toast.warning(`La propiedad se guardó, pero la foto ${item.file.name} no se pudo subir: ${err.message}`);
-        }
-      }
-      setUploadProgress(null);
     }
 
     toast.success(
@@ -484,34 +472,61 @@ export function PropertyForm({ agentId, amenities, property }: PropertyFormProps
           <h2 className="text-sm font-semibold text-neutral-900">Fotos de la Propiedad</h2>
           <p className="text-xs text-neutral-500">
             {isEditing
-              ? "Sube nuevas fotos o cambia la foto de portada."
-              : "Selecciona las fotos para esta nueva propiedad. Se subirán automáticamente a Cloudinary al presionar 'Crear propiedad'."}
+              ? "Sube nuevas fotos o cambia la foto de portada. Se suben de inmediato a Cloudinary."
+              : "Arrastra tus fotos aquí. Se subirán al instante con barra de progreso y podrás elegir la portada."}
           </p>
         </div>
         <ImageUploader
-          propertyId={property?.id}
+          propertyId={targetPropertyId}
+          isNewProperty={!isEditing}
           initialImages={property?.images ?? []}
-          stagedImages={stagedImages}
-          onStagedImagesChange={setStagedImages}
+          onImagesChange={setUploadedImages}
+          onUploadingChange={(isUploading, count) => {
+            setIsImagesUploading(isUploading);
+            setUploadingCount(count);
+          }}
         />
       </section>
+
+      {/* Multimedia y Documentos: Video y PDF */}
+      <MediaUploader
+        propertyId={targetPropertyId}
+        videoUrl={watch("videoUrl")}
+        videoPublicId={watch("videoPublicId")}
+        pdfUrl={watch("pdfUrl")}
+        pdfPublicId={watch("pdfPublicId")}
+        pdfName={watch("pdfName")}
+        onVideoChange={(url, publicId) => {
+          setValue("videoUrl", url, { shouldDirty: true });
+          setValue("videoPublicId", publicId, { shouldDirty: true });
+        }}
+        onPdfChange={(url, publicId, name) => {
+          setValue("pdfUrl", url, { shouldDirty: true });
+          setValue("pdfPublicId", publicId, { shouldDirty: true });
+          setValue("pdfName", name, { shouldDirty: true });
+        }}
+      />
 
       <div className="flex justify-end gap-3 border-t border-neutral-200 pt-6">
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+          className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          disabled={isSubmitting || Boolean(uploadProgress)}
-          className="flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+          disabled={isSubmitting || isImagesUploading}
+          className="flex items-center gap-2 rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          {(isSubmitting || uploadProgress) && <Loader2 className="h-4 w-4 animate-spin" />}
-          {uploadProgress
-            ? uploadProgress
+          {(isSubmitting || isImagesUploading) && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+          {isSubmitting
+            ? "Guardando..."
+            : isImagesUploading
+            ? `Subiendo fotos (${uploadingCount} restante${uploadingCount === 1 ? "" : "s"})...`
             : isEditing
             ? "Guardar cambios"
             : "Crear propiedad"}

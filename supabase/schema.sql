@@ -68,6 +68,13 @@ create table properties (
   featured boolean not null default false,
   views_count integer not null default 0,
 
+  -- Multimedia adicional y Documentos (Cloudinary / Enlaces)
+  video_url text,
+  video_public_id text,
+  pdf_url text,
+  pdf_public_id text,
+  pdf_name text,
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

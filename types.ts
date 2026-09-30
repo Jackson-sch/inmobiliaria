@@ -100,6 +100,11 @@ export interface Property {
   yearBuilt: number | null;
   featured: boolean;
   viewsCount: number;
+  videoUrl?: string | null;
+  videoPublicId?: string | null;
+  pdfUrl?: string | null;
+  pdfPublicId?: string | null;
+  pdfName?: string | null;
   createdAt: string;
   updatedAt: string;
   // Relaciones opcionales (join)
@@ -206,6 +211,11 @@ export const propertyFormSchema = z.object({
       .optional()
   ),
   featured: z.boolean().default(false),
+  videoUrl: z.string().optional().nullable(),
+  videoPublicId: z.string().optional().nullable(),
+  pdfUrl: z.string().optional().nullable(),
+  pdfPublicId: z.string().optional().nullable(),
+  pdfName: z.string().optional().nullable(),
   amenityIds: z.array(z.string().uuid()).optional(),
 });
 export type PropertyFormInput = z.input<typeof propertyFormSchema>;
@@ -266,3 +276,14 @@ export function toPropertyImageInput(
     sortOrder,
   };
 }
+
+export interface InitialPropertyImageInput {
+  cloudinaryPublicId: string;
+  secureUrl: string;
+  width?: number | null;
+  height?: number | null;
+  format?: string | null;
+  isCover: boolean;
+  sortOrder: number;
+}
+
